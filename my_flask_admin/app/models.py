@@ -1,16 +1,8 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 __author__ = 'mosson'
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from app import db
 from datetime import datetime
-
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:123456@47.104.70.170/movie"
-# 追踪对象的修改且发送信号  需要内存  可以禁用
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
-
-db = SQLAlchemy(app)
 
 
 # 会员
@@ -25,9 +17,9 @@ class User(db.Model):
     face = db.Column(db.String(255), unique=True)
     addtime = db.Column(db.DateTime, index=True, default=datetime.now)
     uuid = db.Column(db.String(255), unique=True)
-    userlogs = db.relationship("userlog", backref="user")
-    comments = db.relationship("Comment", backref="user")
-    moviecols = db.relationship("movieCols", backref="user")
+    # userlogs = db.relationship("userlog", backref="user")
+    # comments = db.relationship("Comment", backref="user")
+    # moviecols = db.relationship("movieCols", backref="user")
 
     def __repr__(self):
         return "<User %r>" % self.name
@@ -37,7 +29,7 @@ class User(db.Model):
 class userLog(db.Model):
     __tablename__ = "userlog"
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    # user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     ip = db.Column(db.String(100))
     addtime = db.Column(db.DateTime, index=True, default=datetime.now)
     
@@ -50,8 +42,8 @@ class Tag(db.Model):
     __tablename__ = "tag"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True)
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
-    movies = db.relationship("Movie", backref="tag")
+    addtime = db.Column(db.Integer, index=True)
+    # movies = db.relationship("Movie", backref="tag")
 
     def __repr__(self):
         return "<Tag %r>" % self.name
@@ -144,7 +136,7 @@ class Role(db.Model):
     name = db.Column(db.String(100), unique=True)
     auths = db.Column(db.String(600))
     addtime = db.Column(db.DateTime, index=True, default=datetime.now)
-    admins = db.relationship("Admin", backref="role")
+    # admins = db.relationship("Admin", backref="role")
 
     def __repr__(self):
         return "<Role %r>" % self.name
@@ -157,19 +149,24 @@ class Admin(db.Model):
     name = db.Column(db.String(100), unique=True)
     pwd = db.Column(db.String(100))
     is_super = db.Column(db.Integer)
-    role_id = db.Column(db.Integer, db.ForeignKey("role.id"))
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
-    adminlogs = db.relationship("adminLog", backref="admin")
-    oplogs = db.relationship("opLog", backref="admin")
+    # role_id = db.Column(db.Integer, db.ForeignKey("role.id"))
+    role_id = db.Column(db.Integer)
+    addtime = db.Column(db.Integer, index=True)
+    # adminlogs = db.relationship("adminLog", backref="admin") # 管理员登录日志
+    # oplogs = db.relationship("opLog", backref="admin") # 管理员操作日志
 
     def __repr__(self):
         return "<Admin %r>" % self.name
+
+    def check_pwd(self, pwd):
+        from werkzeug.security import check_password_hash
+        return check_password_hash(self.pwd, pwd)
 
 
 class adminLog(db.Model):
     __tablename__ = "adminlog"
     id = db.Column(db.Integer, primary_key=True)
-    admin_id = db.Column(db.Integer, db.ForeignKey("admin.id"))
+    # admin_id = db.Column(db.Integer, db.ForeignKey("admin.id"))
     ip = db.Column(db.String(255))
     addtime = db.Column(db.DateTime, index=True, default=datetime.now)
 
@@ -180,7 +177,7 @@ class adminLog(db.Model):
 class opLog(db.Model):
     __tablename__ = "oplog"
     id = db.Column(db.Integer, primary_key=True)
-    admin_id = db.Column(db.Integer, db.ForeignKey("admin.id"))
+    # admin_id = db.Column(db.Integer, db.ForeignKey("admin.id"))
     ip = db.Column(db.String(255))
     reason = db.Column(db.String(600))
     addtime = db.Column(db.DateTime, index=True, default=datetime.now)
@@ -188,5 +185,5 @@ class opLog(db.Model):
     def __repr__(self):
         return "<oplog %r>" % self.id
 
-if __name__ == "__main__":
+
     

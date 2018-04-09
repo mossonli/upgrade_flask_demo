@@ -41,10 +41,19 @@ def loginlog():
 def moviecol():
     return render_template("home/moviecol.html")
 
+
 @home.route("/animation/")
 def animation():
     return render_template("home/animation.html")
 
+# 电影搜索页面
 @home.route("/search/")
 def search():
     return render_template("home/search.html")
+
+# 电影播放页面
+@home.route("/play/")
+def play():
+    return render_template("home/play.html")
+
+
