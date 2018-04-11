@@ -11,11 +11,11 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True)
     pwd = db.Column(db.String(100))
-    eamil = db.Column(db.String(100), unique=True)
+    email = db.Column(db.String(100), unique=True)
     phone = db.Column(db.String(11), unique=True)
     info = db.Column(db.Text)
     face = db.Column(db.String(255), unique=True)
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
+    addtime = db.Column(db.Integer, index=True)
     uuid = db.Column(db.String(255), unique=True)
     # userlogs = db.relationship("userlog", backref="user")
     # comments = db.relationship("Comment", backref="user")
@@ -59,13 +59,14 @@ class Movie(db.Model):
     star = db.Column(db.Integer)
     playnum = db.Column(db.Integer)
     commentnum = db.Column(db.Integer)    
-    tag_id = db.Column(db.Integer, db.ForeignKey("tag.id"))
+    # tag_id = db.Column(db.Integer, db.ForeignKey("tag.id"))
+    tag_id = db.Column(db.Integer)
     area = db.Column(db.String(255))
     release_time = db.Column(db.Date)
     length = db.Column(db.String(100))
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
-    comments = db.relationship("Comment", backref="movie")
-    moviecols = db.relationship("movieCol", backref="movie")
+    addtime = db.Column(db.Integer, index=True)
+    # comments = db.relationship("Comment", backref="movie")  # 评论
+    # moviecols = db.relationship("movieCol", backref="movie") # 收藏 
     
     def __repr__(self):
         return "<Movie %r>" % self.title
@@ -76,7 +77,7 @@ class Preview(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), unique=True)
     logo = db.Column(db.String(255), unique=True)
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
+    addtime = db.Column(db.Integer, index=True)
 
     def __repr__(self):
         return "<Preview %r>" % self.title
@@ -86,9 +87,11 @@ class Comment(db.Model):
     __tablename__ = "comment"
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text)
-    movie_id = db.Column(db.Integer, db.ForeignKey("movie.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
+    movie_id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer)
+    # movie_id = db.Column(db.Integer, db.ForeignKey("movie.id"))
+    # user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    addtime = db.Column(db.Integer, index=True)
 
     def __repr__(self):
         return "<Comment %r>" % self.id
