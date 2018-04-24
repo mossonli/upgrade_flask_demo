@@ -4,7 +4,7 @@ __author__ = 'mosson'
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, FileField, TextAreaField, SelectField, SelectMultipleField
 from wtforms.validators import DataRequired, ValidationError, EqualTo
-from app.models import Admin, Tag
+from app.models import Admin, Tag, Auth, Role
 
 
 class LoginForm(FlaskForm):
@@ -207,3 +207,159 @@ class PreviewForm(FlaskForm):
         }
     )
 
+class PwdForm(FlaskForm):
+    old_pwd = PasswordField(
+        label=u"旧密码",
+        validators=[
+            DataRequired(u"旧密码不能为空！")
+        ],
+        description=u"旧密码",
+        render_kw={
+            "class": "form-control",
+            "placeholder": u"请输入旧密码！",
+        }
+    )
+    new_pwd = PasswordField(
+        label=u"新密码",
+        validators=[
+            DataRequired(u"新密码不能为空！")
+        ],
+        description=u"新密码",
+        render_kw={
+            "class": "form-control",
+            "placeholder": u"请输入新密码！",
+        }
+    )
+    submit = SubmitField(
+        u'编辑',
+        render_kw={
+            "class": "btn btn-primary",
+        }
+    )
+
+    def validate_old_pwd(self, field):
+        from flask import session
+        pwd = field.data
+        name = session['admin']
+        admin = Admin.query.filter(Admin.name == name).first()
+        if not admin.check_pwd(pwd):
+            raise ValidationError(u"就密码错误！")
+            
+
+# 权限验证
+class AuthForm(FlaskForm):
+    name = StringField(
+        label=u"权限名称",
+        validators=[
+            DataRequired(u"权限名称不能为空！")
+        ],
+        description=u"权限名称",
+        render_kw={
+            "class": "form-control",
+            "placeholder": u"请输入权限名称！"
+        }
+    )
+    url = StringField(
+        label=u"权限地址",
+        validators=[
+            DataRequired(u"权限地址不能为空！")
+        ],
+        description=u"权限地址",
+        render_kw={
+            "class": "form-control",
+            "placeholder": u"请输入权限地址！"
+        }
+    )
+    submit = SubmitField(
+        u'编辑',
+        render_kw={
+            "class": "btn btn-primary",
+        }
+    )
+
+
+# 角色验证
+class RoleForm(FlaskForm):
+    name = StringField(
+        label=u"角色名称",
+        validators=[
+            DataRequired(u"角色名称不能为空！")
+        ],
+        description=u"角色名称",
+        render_kw={
+            "class": "form-control",
+            "placeholder": u"请输入角色名称！"
+        }
+    )
+    # 多选框 
+    auths = SelectMultipleField(
+        label=u"权限列表",
+        validators=[
+            DataRequired("权限列表不能为空！")
+        ],
+        # 动态数据填充选择栏：列表生成器
+        coerce=int,
+        choices=[(v.id, v.name) for v in Auth.query.all()],
+        description=u"权限列表",
+        render_kw={
+            "class": "form-control",
+        }
+    )
+    submit = SubmitField(
+        u'编辑',
+        render_kw={
+            "class": "btn btn-primary",
+        }
+    )
+
+
+# 管理员的form验证
+class AdminForm(FlaskForm):
+    name = StringField(
+        label=u"管理员名称",
+        validators=[
+            DataRequired(u"管理员名称不能为空！")
+        ],
+        description=u"管理员名称",
+        render_kw={
+            "class": "form-control",
+            "placeholder": u"请输入管理员名称！",
+        }
+    )
+    pwd = PasswordField(
+        label=u"管理员密码",
+        validators=[
+            DataRequired(u"管理员密码不能为空！")
+        ],
+        description=u"管理员密码",
+        render_kw={
+            "class": "form-control",
+            "placeholder": u"请输入管理员密码！",
+        }
+    )
+    repwd = PasswordField(
+        label=u"管理员重复密码",
+        validators=[
+            DataRequired(u"管理员重复密码不能为空！"),
+            EqualTo('pwd', message=u"两次密码不一致！")
+        ],
+        description=u"管理员重复密码",
+        render_kw={
+            "class": "form-control",
+            "placeholder": u"请输入管理员重复密码！",
+        }
+    )
+    role_id = SelectField(
+        label=u"所属角色",
+        coerce=int,
+        choices=[(v.id, v.name) for v in Role.query.all()],
+        render_kw={
+            "class": "form-control",
+        }
+    )
+    submit = SubmitField(
+        u'编辑',
+        render_kw={
+            "class": "btn btn-primary",
+        }
+    )

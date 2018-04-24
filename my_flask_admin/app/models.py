@@ -24,14 +24,18 @@ class User(db.Model):
     def __repr__(self):
         return "<User %r>" % self.name
 
+    def check_pwd(self, pwd):
+        from werkzeug.security import check_password_hash
+        return check_password_hash(self.pwd, pwd)
 
 # 会员登录日志
-class userLog(db.Model):
+class UserLog(db.Model):
     __tablename__ = "userlog"
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer)
     # user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     ip = db.Column(db.String(100))
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
+    addtime = db.Column(db.Integer, index=True)
     
     def __repr__(self):
         return "<userLog %r>" % self.id
@@ -109,12 +113,12 @@ class Comment(db.Model):
 #         return "<Comment %r>" % self.id
 
 
-class movieCol(db.Model):
+class MovieCol(db.Model):
     __tablename__ = "moviecol"
     id = db.Column(db.Integer, primary_key=True)
-    movie_id = db.Column(db.Integer, db.ForeignKey("movie.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
+    movie_id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer)
+    addtime = db.Column(db.Integer, index=True)
 
     def __repr__(self):
         return "<movieCol %r>" % self.id
@@ -126,7 +130,7 @@ class Auth(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True)
     url = db.Column(db.String(255), unique=True)
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
+    addtime = db.Column(db.Integer)
 
     def __repr__(self):
         return "<Auth %r>" % self.name
@@ -137,8 +141,8 @@ class Role(db.Model):
     __tablename__ = "role"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True)
-    auths = db.Column(db.String(600))
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
+    auths = db.Column(db.String(600)) # 角色权限列表
+    addtime = db.Column(db.Integer, index=True)
     # admins = db.relationship("Admin", backref="role")
 
     def __repr__(self):
@@ -166,24 +170,26 @@ class Admin(db.Model):
         return check_password_hash(self.pwd, pwd)
 
 
-class adminLog(db.Model):
+class AdminLog(db.Model):
     __tablename__ = "adminlog"
     id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(db.Integer)
     # admin_id = db.Column(db.Integer, db.ForeignKey("admin.id"))
     ip = db.Column(db.String(255))
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
+    addtime = db.Column(db.Integer, index=True)
 
     def __repr__(self):
         return "<adminlog %r>" % self.id
 
 
-class opLog(db.Model):
+class OpLog(db.Model):
     __tablename__ = "oplog"
     id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(db.Integer)
     # admin_id = db.Column(db.Integer, db.ForeignKey("admin.id"))
     ip = db.Column(db.String(255))
     reason = db.Column(db.String(600))
-    addtime = db.Column(db.DateTime, index=True, default=datetime.now)
+    addtime = db.Column(db.Integer, index=True)
 
     def __repr__(self):
         return "<oplog %r>" % self.id
