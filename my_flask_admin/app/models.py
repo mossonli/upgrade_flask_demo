@@ -101,16 +101,6 @@ class Comment(db.Model):
         return "<Comment %r>" % self.id
 
 
-# class Comment(db.Model):
-#     __tablename__ = "comment"
-#     id = db.Column(db.Integer, primary_key=True)
-#     content = db.Column(db.Text)
-#     movie_id = db.Column(db.Integer, db.ForeignKey("movie.id"))
-#     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-#     addtime = db.Column(db.DateTime, index=True, default=datetime.now)
-
-#     def __repr__(self):
-#         return "<Comment %r>" % self.id
 
 
 class MovieCol(db.Model):

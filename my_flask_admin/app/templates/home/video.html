@@ -2,7 +2,11 @@
 {% import "ui/comment_page.html" as pg %}
 {%block css%}
 <!--播放页面-->
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='jwplayer/skins/stormtrooper.css')}}">
+<link rel="stylesheet" href="{{ url_for('static',filename='dplayer/dist/DPlayer.min.css') }}">
+<script src="{{ url_for('static',filename='dplayer/plugin/flv.min.js') }}"></script>
+<script src="{{ url_for('static',filename='dplayer/plugin/hls.min.js') }}"></script>
+<script src="{{ url_for('static',filename='dplayer/dist/DPlayer.min.js') }}"></script>
+
 <script type="text/javascript" src="{{url_for('static', filename='ueditor/ueditor.config.js')}}"></script>
 <script type="text/javascript" src="{{url_for('static', filename='ueditor/ueditor.all.js')}}"></script>
 <script type="text/javascript" src="{{url_for('static', filename='ueditor/lang/zh-cn/zh-cn.js')}}"></script>
@@ -11,13 +15,16 @@
 </script>
 <!--播放页面-->
 <style>
-    .navbar-brand>img {
+    .dplayer-comment-setting-type>label{
+    display: inline;
+    }
+    /* .navbar-brand>img {
         display: inline;
     }
     .media{
         padding:3px;
         border:1px solid #ccc
-    }
+    } */
     .col-lg-1, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-md-1, .col-md-10, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-sm-1, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-xs-1, .col-xs-10, .col-xs-11, .col-xs-12, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9{
         padding-right: 3px;
         padding-left: 3px;
@@ -32,7 +39,7 @@
 <!--内容-->
 <div class="row">
     <div class="col-md-8">
-        <div id="moviecontainer"></div>
+            <div id="dplayer1" style="height:500px;width: 774px;"></div>
     </div>
     <div class="col-md-4" style="height:500px;">
         <div class="panel panel-info">
@@ -196,7 +203,7 @@
                     {%endfor%}
                 </ul>
                 <div class="col-md-12 text-center">
-                    {{ pg.page(page_data,'home.play',movie.Movie.id) }}
+                    {{ pg.page(page_data, 'home.video', movie.Movie.id) }}
                 </div>
             </div>
         </div>
@@ -206,7 +213,20 @@
 {%endblock%}
 {%block js%}
 <!--播放页面-->
-<script src="{{url_for('static', filename='jwplayer/jwplayer.js')}}"></script>
+<script>
+        var dp1 = new DPlayer({
+            element: document.getElementById('dplayer1'),
+            video: {
+                url: "{{ url_for('static',filename='uploads/'+movie.Movie.url) }}",
+            },
+            danmaku: {
+                id: '{{ movie.Movie.id }}',
+                api: "/tm/"
+            }
+        });
+</script>
+
+
 <script>
 var ue = UE.getEditor('input_content',{
     toolbars: [
@@ -215,34 +235,9 @@ var ue = UE.getEditor('input_content',{
     initialFrameWidth:"100%",
     initialFrameHeight:"100",
 });
+
 </script>
-<script type="text/javascript">
-	jwplayer.key = "P9VTqT/X6TSP4gi/hy1wy23BivBhjdzVjMeOaQ==";
-</script>
-<script type="text/javascript">
-	jwplayer("moviecontainer").setup({
-		flashplayer: "{{url_for('static', filename='jwplayer/jwplayer.flash.swf')}}",
-		playlist: [{
-			file: "{{url_for('static', filename='uploads/'+ movie.Movie.url)}}",
-			title: "{{movie.Movie.title}}"
-		}],
-		modes: [{
-			type: "html5"
-		}, {
-			type: "flash",
-			src: "{{url_for('static', filename='jwplayer/jwplayer.flash.swf')}}"
-		}, {
-			type: "download"
-		}],
-		skin: {
-			name: "vapor"
-		},
-		"playlist.position": "left",
-		"playlist.size": 400,
-		height: 500,
-		width: 774,
-	});
-</script>
+
 <!--播放页面-->
 <!-- 电影收藏 -->
 <script type="text/javascript">
@@ -252,7 +247,7 @@ var ue = UE.getEditor('input_content',{
             var mid = {{ movie.Movie.id }};
             var uid = {{ session['user_id'] }};
             $.ajax({
-                url: "/moviecol/add/",
+                url: "{{ url_for('home.moviecol_add') }}",
                 type: "GET",
                 data: "mid=" + mid + "&uid=" + uid,
                 dataType: "json",

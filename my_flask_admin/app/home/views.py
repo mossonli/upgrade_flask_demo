@@ -2,16 +2,17 @@
 # -*- coding:utf-8 -*-
 __author__ = 'mosson'
 from.import home
-from flask import render_template, redirect, url_for, flash, session, request
+from flask import render_template, redirect, url_for, flash, session, request, Response
 from app.home.forms import RegistForm, LoginForm, UserdetailForm, PwdForm, CommentForm
 from app.models import User, UserLog, Preview, Tag, Movie, Comment, MovieCol
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
+from flask.ext.redis import FlaskRedis
 import time
 import uuid
 import os
 import datetime
-from app import db, app
+from app import db, app, rd
 from functools import wraps
 from sqlalchemy import and_
 import json
@@ -209,15 +210,19 @@ def modify_pwd():
         return redirect(url_for("home.logout"))
     return render_template("home/modify_pwd.html", form=form)
 
-@home.route("/comments/<int:page>")
+@home.route("/comments/<int:page>/")
 @user_login_req
 def comments(page=None):
     if page is None:
         page = 1
+    print(session['user_id'])
+    
     p = Comment.query.join(Movie, Comment.movie_id == Movie.id).add_entity(Movie).join(User, session['user_id'] == User.id).add_entity(User).order_by(Comment.addtime.desc())
     print(p)
     # page_data = Comment.query.join(Movie, Comment.movie_id == Movie.id).add_entity(Movie).join(User, session['user_id'] == User.id).add_entity(User).order_by(Comment.addtime.desc()).paginate(page=page, per_page=10)
-    page_data = User.query.join(Movie, User.id == session['user_id']).add_entity(User).join(Comment, Movie.id == Comment.movie_id).add_entity(Comment).order_by(Comment.addtime.desc()).paginate(page=page, per_page=10)
+    # page_data = User.query.join(Movie, User.id == session['user_id']).add_entity(User).join(Comment, Movie.id == Comment.movie_id).add_entity(Comment).order_by(Comment.addtime.desc()).paginate(page=page, per_page=10)
+    page_data = Comment.query.join(Movie, Comment.movie_id == Movie.id).add_entity(Movie).join(User, session['user_id'] == User.id).add_entity(User).paginate(page=page, per_page=10)
+    
     return render_template("home/comments.html", page_data=page_data)
 
 @home.route("/loginlog/<int:page>/")
@@ -248,10 +253,13 @@ def moviecol_add():
     return json.dumps(data)
 
 # 电影收藏
-@home.route("/moviecol/")
+@home.route("/moviecol/<int:page>/", methods=['GET', 'POST'])
 @user_login_req
-def moviecol():
-    return render_template("home/moviecol.html")
+def moviecol(page=None):
+    if page is None:
+        page = 1
+    page_data = MovieCol.query.join(Movie, MovieCol.movie_id == Movie.id).add_entity(Movie).join(User, session['user_id'] == User.id).add_entity(User).paginate(page=page, per_page=10)
+    return render_template("home/moviecol.html", page_data=page_data)
 
 
 # 上映预告
@@ -268,6 +276,7 @@ def search(page=None):
     key = request.args.get("key", "")
     movie_count = Movie.query.filter(Movie.title.ilike('%' + key + '%')).count()
     page_data = Movie.query.filter(Movie.title.ilike('%' + key + '%')).order_by(Movie.addtime.desc()).paginate(page=page, per_page=10)
+    page_data.key = key
     return render_template("home/search.html", key=key, page_data=page_data, movie_count=movie_count)
 
 # 电影播放页面
@@ -302,4 +311,114 @@ def play(id=None, page=None):
     db.session.commit()
     return render_template("home/play.html", movie=movie, form=form, page_data=page_data)
 
+
+
+@home.route("/video/<int:id>/<int:page>/", methods=['GET', 'POST'])
+def video(id=None, page=None):
+    movie = Movie.query.join(Tag, and_(Movie.tag_id == Tag.id, Movie.id == int(id))).add_entity(Tag).first()
+    
+    if page is None:
+        page = 1
+    page_data = Comment.query.join(Movie, Comment.movie_id == Movie.id).add_entity(Movie).join(User, Comment.user_id == User.id).add_entity(User).order_by(Comment.addtime.desc()).paginate(page=page, per_page=10)
+    form = CommentForm()
+    if "user" in session and form.validate_on_submit():
+        data = form.data
+        comment = Comment(
+            content=data['content'],
+            movie_id=movie.Movie.id,
+            user_id=session['user_id'],
+            addtime=current_time
+        )
+        db.session.add(comment)
+        db.session.commit()
+        # db.session.close()
+        movie.Movie.commentnum += 1
+        db.session.add(movie.Movie)
+        db.session.commit()
+        flash(u"添加评论成功", "ok")
+        return redirect(url_for('home.video', id=movie.Movie.id, page=1))
+    print(movie.Movie.playnum)
+    movie.Movie.playnum += 1
+    print(movie.Movie.playnum)
+    db.session.add(movie.Movie)
+    db.session.commit()
+    return render_template("home/video.html", movie=movie, form=form, page_data=page_data)
+
+
+
+
+
+# @app.route('/video/<int:id>/<int:page>/', methods=["GET", "POST"])
+# def video(id=None, page=None):
+    movie = Movie.query.join(Tag, and_(Movie.tag_id == Tag.id, Movie.id == int(id))).add_entity(Tag).first()
+    
+    if page is None:
+        page = 1
+    page_data = Comment.query.join(Movie, Comment.movie_id == Movie.id).add_entity(Movie).join(User, Comment.user_id == User.id).add_entity(User).order_by(Comment.addtime.desc()).paginate(page=page, per_page=10)
+    form = CommentForm()
+    if "user" in session and form.validate_on_submit():
+        data = form.data
+        comment = Comment(
+            content=data['content'],
+            movie_id=movie.Movie.id,
+            user_id=session['user_id'],
+            addtime=current_time
+        )
+        db.session.add(comment)
+        db.session.commit()
+        # db.session.close()
+        movie.Movie.commentnum += 1
+        db.session.add(movie.Movie)
+        db.session.commit()
+        flash(u"添加评论成功", "ok")
+        return redirect(url_for('home.video', id=movie.Movie.id, page=1))
+    print(movie.Movie.playnum)
+    movie.Movie.playnum += 1
+    print(movie.Movie.playnum)
+    db.session.add(movie.Movie)
+    db.session.commit()
+    return render_template("home/video.html", movie=movie, form=form, page_data=page_data)
+
+@home.route("/tm/", methods=["GET", "POST"])
+def tm():
+    import json
+    if request.method == "GET":
+        #获取弹幕消息队列
+        id = request.args.get('id')
+        key = "movie" + str(id)
+        if rd.llen(key):
+            msgs = rd.lrange(key, 0, 2999)
+            res = {
+                "code": 1,
+                "danmaku": [json.loads(v) for v in msgs]
+            }
+        else:
+            res = {
+                "code": 1,
+                "danmaku": []
+            }
+        resp = json.dumps(res)
+    if request.method == "POST":
+        #添加弹幕
+        data = json.loads(request.get_data())
+        msg = {
+            "__v": 0,
+            "author": data["author"],
+            "time": data["time"],
+            "text": data["text"],
+            "color": data["color"],
+            "type": data['type'],
+            "ip": request.remote_addr,
+            "_id": datetime.datetime.now().strftime("%Y%m%d%H%M%S") + uuid.uuid4().hex,
+            "player": [
+                data["player"]
+            ]
+        }
+        res = {
+            "code": 1,
+            "data": msg
+        }
+        resp = json.dumps(res)
+        rd.lpush("movie" + str(data["player"]), json.dumps(msg))
+    return Response(resp, mimetype='application/json')
 
